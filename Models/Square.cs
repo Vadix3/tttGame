@@ -8,6 +8,5 @@ namespace tttGame.Models
     {
         public string Button { get; set; }
         public char Shape { get; set; }
-
     }
 }

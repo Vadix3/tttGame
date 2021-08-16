@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Nancy.Json;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -6,6 +8,7 @@ using System.Drawing;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using tttGame.Models;
@@ -14,7 +17,8 @@ namespace tttGame
 {
     public partial class Game_Form : Form
     {
-        public  const int SIZE = 5;
+        public const int SIZE = 5;
+        public const string turnPath = "api/GameBoards/test"; // the path for the servers turn
 
         private static HttpClient client = new HttpClient();
 
@@ -54,6 +58,7 @@ namespace tttGame
                             break;
                     }
                     game.gameMatrix[i, j].Button = btnName;
+                    game.gameMatrix[i, j].Shape = ' ';
                 }
             }
 
@@ -69,7 +74,6 @@ namespace tttGame
         {
             InitializeComponent();
             Init_Game_Matrix();
-            Show_win_dialog('O');
         }
 
         private void Game_Form_Load(object sender, EventArgs e)
@@ -318,20 +322,91 @@ namespace tttGame
             }
             else
             {
-                Disable_Buttons();
+                //Disable_Buttons();
                 Server_move();
             }
         }
 
         /** A method that will send the board to the server and the server will make a play, and return the board*/
-        private void Server_move()
+        private async void Server_move()
         {
-            Console.WriteLine("Server move");
+            // a json representation of the matrix
+            string jsonMatrix = Convert_matrix_to_json();
 
-
-            
             // send the board to the server
-            // receive the board with the play
+            string path = $"api/GameBoards/test";
+
+            var response = client.PostAsJsonAsync(turnPath, jsonMatrix).Result;
+
+            //HttpResponseMessage response = await client.PostAsJsonAsync(path, jsonMatrix);
+            if (response.IsSuccessStatusCode)
+            {
+
+                // receive the board with the play
+                var responseString = await response.Content.ReadAsStringAsync();
+                Console.WriteLine("Success: " + responseString);
+
+                Square[,] temp = Convert_json_to_matrix(responseString);
+
+                game.gameMatrix = temp;
+
+                
+                
+            }
+            else
+            {
+                Console.WriteLine("Error: " + response.ReasonPhrase);
+            }
+        }
+
+        /** A method to convert the current board to a json object*/
+        private string Convert_matrix_to_json()
+        {
+            char[,] temp = new char[SIZE, SIZE];
+
+            for (int i = 0; i < SIZE; i++)
+            {
+                for (int j = 0; j < SIZE; j++)
+                {
+                    temp[i, j] = game.gameMatrix[i, j].Shape;
+                }
+            }
+
+            var demoJsonMatrix = JsonConvert.SerializeObject(temp);
+            //convert json to object
+            Console.WriteLine("Json matrix = " + demoJsonMatrix);
+
+            return demoJsonMatrix;
+        }
+
+
+        /** A method to convert the http response to a game board*/
+        private Square[,] Convert_json_to_matrix(string content)
+        {
+            char[,] plain = JsonConvert.DeserializeObject<char[,]>(content);
+            Square[,] temp = game.gameMatrix;
+            for (int i = 0; i < SIZE; i++)
+            {
+                for (int j = 0; j < SIZE; j++)
+                {
+                    temp[i, j].Shape = plain[i, j]; // copy the shapes to the game board
+                    if (plain[i, j] != ' ') {
+                        string btnName = temp[i, j].Button;
+                        int c = Convert.ToInt32(btnName[1].ToString()) + 1;
+                        string finalName = btnName[0] + c.ToString();
+                        Button btn = Controls.Find(finalName, true).FirstOrDefault() as Button;
+                        btn.Text = plain[i, j].ToString();
+                        btn.Enabled = false;
+                        isMyTurn = true;
+
+                        //sleep
+                        int milliseconds = 200;
+                        Thread.Sleep(milliseconds);
+                    }
+                }
+            }
+
+            return temp;
         }
 
         private void Win_Scenario(char winner)
