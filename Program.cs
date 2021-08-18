@@ -17,7 +17,7 @@ namespace tttGame
             Application.SetHighDpiMode(HighDpiMode.SystemAware);
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new Game_Form());
+            Application.Run(new Login_Form());
         }
     }
 }

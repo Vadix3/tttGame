@@ -66,8 +66,9 @@ namespace tttGame
             {
                 for (int j = 0; j < SIZE; j++)
                 {
-                    Console.WriteLine(game.gameMatrix[i, j].Button);
+                    Console.Write(game.gameMatrix[i, j].Button+ " ");
                 }
+                Console.WriteLine("");
             }
         }
         public Game_Form()
@@ -125,6 +126,7 @@ namespace tttGame
             if (turns == 25)
             {
                 Console.WriteLine("Game over!");
+               //TODO: send the game to the server 
             }
 
             bool row_win = Check_row_win(cell_index);
@@ -159,6 +161,10 @@ namespace tttGame
             while (i != -1 && j != SIZE)
             { // up right
                 Console.WriteLine("up right");
+                if (counter1 == 2 && game.gameMatrix[i, j].Shape != current_shape)
+                {
+                    return false;
+                }
                 if (game.gameMatrix[i, j].Shape == current_shape)
                 {
                     counter1++;
@@ -174,6 +180,10 @@ namespace tttGame
             while (i != SIZE && j != -1)
             { // down left
                 Console.WriteLine("down left");
+                if (counter1 == 2 && game.gameMatrix[i, j].Shape != current_shape)
+                {
+                    return false;
+                }
                 if (game.gameMatrix[i, j].Shape == current_shape)
                 {
                     counter1++;
@@ -190,7 +200,10 @@ namespace tttGame
             while (i != SIZE && j != SIZE)
             { // down right
                 Console.WriteLine("down right");
-
+                if (counter1 == 2 && game.gameMatrix[i, j].Shape != current_shape)
+                {
+                    return false;
+                }
                 if (game.gameMatrix[i, j].Shape == current_shape)
                 {
                     counter2++;
@@ -206,6 +219,10 @@ namespace tttGame
             while (i != -1 && j != -1)
             { // down left
                 Console.WriteLine("down left");
+                if (counter1 == 2 && game.gameMatrix[i, j].Shape != current_shape)
+                {
+                    return false;
+                }
                 if (game.gameMatrix[i, j].Shape == current_shape)
                 {
                     counter2++;
@@ -231,6 +248,10 @@ namespace tttGame
 
             for (int i = cell_index[1]; i < SIZE; i++) // check until the end
             {
+                if (counter == 2 && game.gameMatrix[i, cell_index[1]].Shape != current_shape)
+                {
+                    return false;
+                }
                 if (game.gameMatrix[i, cell_index[1]].Shape == current_shape)
                 {
                     counter++;
@@ -241,6 +262,10 @@ namespace tttGame
 
             for (int i = cell_index[1]; i >= 0; i--) // check until the start
             {
+                if (counter == 2 && game.gameMatrix[i, cell_index[1]].Shape != current_shape)
+                {
+                    return false;
+                }
                 if (game.gameMatrix[i, cell_index[1]].Shape == current_shape)
                 {
                     counter++;
@@ -265,6 +290,10 @@ namespace tttGame
 
             for (int i = cell_index[1]; i < SIZE; i++) // check until the end
             {
+                if (counter == 2 && game.gameMatrix[cell_index[0], i].Shape != current_shape)
+                {
+                    return false;
+                }
                 if (game.gameMatrix[cell_index[0], i].Shape == current_shape)
                 {
                     counter++;
@@ -275,6 +304,10 @@ namespace tttGame
 
             for (int i = cell_index[1]; i >= 0; i--) // check until the start
             {
+                if (counter == 2 && game.gameMatrix[cell_index[0], i].Shape != current_shape)
+                {
+                    return false;
+                }
                 if (game.gameMatrix[cell_index[0], i].Shape == current_shape)
                 {
                     counter++;
@@ -308,6 +341,7 @@ namespace tttGame
             }
             else
             {
+           
                 btn.Text = "O";
                 game.gameMatrix[cell_index[0], cell_index[1]].Shape = 'O';
             }
@@ -350,14 +384,14 @@ namespace tttGame
 
                 game.gameMatrix = temp;
 
-                
-                
             }
             else
             {
                 Console.WriteLine("Error: " + response.ReasonPhrase);
             }
         }
+
+        
 
         /** A method to convert the current board to a json object*/
         private string Convert_matrix_to_json()
@@ -380,28 +414,42 @@ namespace tttGame
         }
 
 
-        /** A method to convert the http response to a game board*/
+        /** A method to convert the http response to a game board and update the board*/
         private Square[,] Convert_json_to_matrix(string content)
         {
             char[,] plain = JsonConvert.DeserializeObject<char[,]>(content);
             Square[,] temp = game.gameMatrix;
+            
             for (int i = 0; i < SIZE; i++)
             {
                 for (int j = 0; j < SIZE; j++)
                 {
+                    if (!game.gameMatrix[i, j].Shape.Equals(plain[i, j]))
+                    {
+                    Console.WriteLine($"the original = {game.gameMatrix[i, j].Shape} , the temp =  {plain[i, j]}");
                     temp[i, j].Shape = plain[i, j]; // copy the shapes to the game board
                     if (plain[i, j] != ' ') {
+                        
                         string btnName = temp[i, j].Button;
                         int c = Convert.ToInt32(btnName[1].ToString()) + 1;
                         string finalName = btnName[0] + c.ToString();
-                        Button btn = Controls.Find(finalName, true).FirstOrDefault() as Button;
+                        Console.WriteLine(finalName);                       
+                        Button btn = (Button) this.Controls[finalName];
                         btn.Text = plain[i, j].ToString();
                         btn.Enabled = false;
                         isMyTurn = true;
 
-                        //sleep
-                        int milliseconds = 200;
+                        int[] cell_index = Get_cell_index(finalName);
+                    if (Check_win(cell_index))
+                    {
+                      Win_Scenario('O');
+                                
+                    }
+
+                                //sleep
+                            int milliseconds = 3000;
                         Thread.Sleep(milliseconds);
+                       }
                     }
                 }
             }
@@ -416,6 +464,13 @@ namespace tttGame
             Disable_Buttons();
 
             Show_win_dialog(winner);
+
+            //TODO : send the game to the server
+            //game id 
+            //user id 
+            //num of turn
+            //Date time
+            //User win yes , no 
         }
 
 
