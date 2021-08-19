@@ -25,6 +25,7 @@ namespace tttGame
         private bool isMyTurn = true; // my turn flag
         private int turns = 0; // how many turns were played (max 25 no winner game over)
         private GameBoard game = new GameBoard(); // The game board
+        private Players player;
 
         /** A method to initialize the game matrix*/
         private void Init_Game_Matrix()
@@ -71,10 +72,11 @@ namespace tttGame
                 Console.WriteLine("");
             }
         }
-        public Game_Form()
+        public Game_Form(Players players)
         {
             InitializeComponent();
             Init_Game_Matrix();
+            this.player = players;
         }
 
         private void Game_Form_Load(object sender, EventArgs e)

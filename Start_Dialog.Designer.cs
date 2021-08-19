@@ -79,6 +79,7 @@ namespace tttGame
             this.Controls.Add(this.startGame);
             this.Name = "Start_Dialog";
             this.Text = "Start_Dialog";
+            this.Load += new System.EventHandler(this.Start_Dialog_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
 
