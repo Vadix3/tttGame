@@ -15,26 +15,7 @@ namespace tttGame
     public partial class Login_Form : Form
     {
 
-        //       public static string connectionString = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\batel\Documents\vsprojects\tttGame\MYDB.mdf;Integrated Security=True";
-
-
-        //       private  SqlConnection connection = new SqlConnection(connectionString);
-
-
-        //            string query = "SELECT * FROM TblStudents";
-
-
-        //                   using (SqlConnection connection = new SqlConnection(connectionString))
-        //           {
-        //               SqlCommand command = new SqlCommand(query, connection);
-        //   connection.Open();
-        //               using (SqlDataReader reader = command.ExecuteReader())
-        //               {
-        //                   Console.write(reader);
-        //               }
-        //           }
-
-        private string PATH = $"api/TblPlayers/login";
+        private string PATH = "api/TblPlayers/login";
         private static HttpClient client = new HttpClient();
         public Login_Form()
         {
@@ -46,11 +27,10 @@ namespace tttGame
            
             string UserName = userBox.Text;
             string Password = passwordBox.Text;
-            // id 
-            // 
+         
             Credentials c = new Credentials(UserName, Password);
 
-            // CheckLoginFromServer(c);
+             //CheckLoginFromServer(c);
 
             goToGame(new Players(1,"nathan","amiel","nathan770","password","password","3"));
             
@@ -78,7 +58,7 @@ namespace tttGame
             }
             else
             {
-                MessageBox.Show("Error: " + response.ReasonPhrase);
+                MessageBox.Show("Error: " + response.ReasonPhrase + " the status code "+response.StatusCode);
                 Console.WriteLine("Error: " + response.ReasonPhrase);
             }
 
@@ -86,7 +66,7 @@ namespace tttGame
 
         private void goToGame(Players temp)
         {
-            Start_Dialog dialog = new Start_Dialog(temp);
+            Start_Dialog dialog = new Start_Dialog(client,temp);
             dialog.ShowDialog();
             this.Close();
         }

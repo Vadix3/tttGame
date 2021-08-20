@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Data.SqlClient;
 using System.Drawing;
 using System.Linq;
 using System.Net.Http;
@@ -21,16 +22,20 @@ namespace tttGame
         public const string turnPath = "api/GameBoards/test"; // the path for the servers turn
 
         private static HttpClient client = new HttpClient();
+        private string connectionString = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\henrico\source\repos\tttGame\MYDB.mdf;Integrated Security=True";
+
 
         private bool isMyTurn = true; // my turn flag
         private int turns = 0; // how many turns were played (max 25 no winner game over)
         private GameBoard game = new GameBoard(); // The game board
         private Players player;
+        private int option;
+        private string dateGame;
+        private string gameData = "";
 
         /** A method to initialize the game matrix*/
         private void Init_Game_Matrix()
         {
-
             game.gameMatrix = new Square[SIZE, SIZE];
 
             for (int i = 0; i < SIZE; i++)
@@ -72,16 +77,28 @@ namespace tttGame
                 Console.WriteLine("");
             }
         }
-        public Game_Form(Players players)
+        public Game_Form(Players players , int options, string v)
         {
             InitializeComponent();
             Init_Game_Matrix();
             this.player = players;
+            this.option = options;
+            this.dateGame = v;
         }
 
         private void Game_Form_Load(object sender, EventArgs e)
         {
             client.BaseAddress = new Uri("https://localhost:44362/");
+            if(option == 1)
+            {
+                ReplayGame();
+            }
+
+        }
+
+        private void ReplayGame()
+        {
+            Disable_Buttons();
 
         }
 
@@ -339,7 +356,9 @@ namespace tttGame
             if (isMyTurn)
             {
                 btn.Text = "X";
+                btn.BackColor = Color.Blue;
                 game.gameMatrix[cell_index[0], cell_index[1]].Shape = 'X';
+                gameData = gameData + "X" + btn.Name+"/"; 
             }
             else
             {
@@ -440,7 +459,8 @@ namespace tttGame
                         btn.Text = plain[i, j].ToString();
                         btn.Enabled = false;
                         isMyTurn = true;
-
+                            btn.BackColor = Color.Red;
+                            gameData = gameData + "O" + finalName + "/";
                         int[] cell_index = Get_cell_index(finalName);
                     if (Check_win(cell_index))
                     {
@@ -462,10 +482,10 @@ namespace tttGame
         private void Win_Scenario(char winner)
         {
             Console.WriteLine(winner + " is the winner!");
-
+            Console.WriteLine(gameData);
             Disable_Buttons();
 
-            Show_win_dialog(winner);
+            
 
             //TODO : send the game to the server
             //game id 
@@ -473,6 +493,45 @@ namespace tttGame
             //num of turn
             //Date time
             //User win yes , no 
+            string w = "";
+            if (winner.Equals("X"))
+            { w = "Yes"; }
+            else { w = "No"; }
+            Game game = new Game(player.id, turns, DateTime.Now, w);
+            sendGameToServer(game);
+
+            sendGameToDb(game);
+            Show_win_dialog(winner);
+        }
+
+        private void sendGameToDb(Game game)
+        {
+            string query = "INSERT INTO TblGames (Participant, Num_of_turns, Date, User_win, Data_game) " +
+                            "VALUES(" + game.participant + "," + game.num_of_turns + "," + game.date + "," + game.user_win + "," + gameData + ")";
+            putData(query);
+        }
+
+        private async void sendGameToServer(Game game)
+        {
+            var JsonCredential = JsonConvert.SerializeObject(game);
+            //convert json to object
+            Console.WriteLine("Json matrix = " + JsonCredential);
+
+            string gamePATH = "api/TblGames";
+            var response = client.PostAsJsonAsync(gamePATH, JsonCredential).Result;
+
+            if (response.IsSuccessStatusCode)
+            {
+                // receive the board with the play
+                var responseString = await response.Content.ReadAsStringAsync();
+                Console.WriteLine("Success: " + responseString);
+                MessageBox.Show("Post on server: " + response.ReasonPhrase);
+            }
+            else
+            {
+                MessageBox.Show("Error: " + response.ReasonPhrase);
+                Console.WriteLine("Error: " + response.ReasonPhrase);
+            }
         }
 
 
@@ -523,5 +582,50 @@ namespace tttGame
                 }
             }
         }
+
+        private void getData(string queryString)
+        {
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                SqlCommand command = new SqlCommand(
+                    queryString, connection);
+                connection.Open();
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    if (reader.HasRows)
+                    {
+                        
+                    }
+                    else
+                    {
+                        
+                    }
+                }
+                connection.Close();
+            }
+        }
+
+        private void putData(string queryString)
+        {
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                SqlCommand command = new SqlCommand(
+                    queryString, connection);
+                
+                try
+                {
+                    connection.Open();
+
+                    MessageBox.Show("Post on Local DB");
+                }
+                catch (SqlException)
+                {
+                    MessageBox.Show("Error Post on Local DB: ");
+                }
+                connection.Close();
+            }
+                
+            }
+        }
     }
-}
+
