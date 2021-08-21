@@ -36,7 +36,7 @@ namespace tttGame
         private void btnQuit_Click(object sender, EventArgs e)
         {
             Console.WriteLine("User decided to quit");
-            Application.Exit();
+            this.Close();
         }
     }
 }

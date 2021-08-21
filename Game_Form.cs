@@ -1,6 +1,8 @@
 ﻿using Nancy.Json;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -22,16 +24,22 @@ namespace tttGame
         public const string turnPath = "api/GameBoards/test"; // the path for the servers turn
 
         private static HttpClient client = new HttpClient();
-        private string connectionString = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\henrico\source\repos\tttGame\MYDB.mdf;Integrated Security=True";
+        private string connectionString = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\batel\Documents\vsprojects\tttGame\MYDB.mdf;Integrated Security=True";
 
+        
 
         private bool isMyTurn = true; // my turn flag
         private int turns = 0; // how many turns were played (max 25 no winner game over)
         private GameBoard game = new GameBoard(); // The game board
         private Players player;
         private int option;
-        private string dateGame;
-        private string gameData = "";
+        private GameHistory history = new GameHistory();
+        private string gameData = ""; // A string representation of the plays that were made. 
+        //For example: Xa1/Oa2 = Player x selected a1 square, player O selected a2 square
+
+
+        private bool Waiting = false; // a boolean variable that indicates if the user decided to wait 3 seconds
+        // between plays
 
         /** A method to initialize the game matrix*/
         private void Init_Game_Matrix()
@@ -72,34 +80,95 @@ namespace tttGame
             {
                 for (int j = 0; j < SIZE; j++)
                 {
-                    Console.Write(game.gameMatrix[i, j].Button+ " ");
+                    Console.Write(game.gameMatrix[i, j].Button + " ");
                 }
                 Console.WriteLine("");
             }
         }
-        public Game_Form(Players players , int options, string v)
+        public Game_Form(Players players, int options, GameHistory history, bool waiting)
         {
+            Console.WriteLine("Game_Form");
             InitializeComponent();
             Init_Game_Matrix();
             this.player = players;
             this.option = options;
-            this.dateGame = v;
+            this.history = history;
+            this.Waiting = waiting;
+
+            Console.WriteLine("Got history in game form = "+history.moves);
+        }
+
+        private void Game_Form_Shown(object sender, EventArgs e) {
+            Console.WriteLine("Form shown");
+            if (option == 1)
+            {
+                ReplayGame();
+            }
         }
 
         private void Game_Form_Load(object sender, EventArgs e)
         {
-            client.BaseAddress = new Uri("https://localhost:44362/");
-            if(option == 1)
+            Console.WriteLine("Game_form_load");
+            if (client.BaseAddress == null)
             {
-                ReplayGame();
+                client.BaseAddress = new Uri("https://localhost:5001/");
             }
+
 
         }
 
         private void ReplayGame()
         {
-            Disable_Buttons();
+            Console.WriteLine("Replay game: "+history.moves);
+            string omittedMoves = history.moves.Remove(history.moves.Length - 1, 1);
+            string[] moves = omittedMoves.Split('/'); // split the string into moves with '/' delimiter
+            ArrayList movesArray = new ArrayList();
+            foreach (var move in moves)
+            {
+                char shape = move[0];
+                string btn = move[1].ToString() + move[2].ToString() + "";
+                Square temp = new Square();
+                temp.Shape = shape;
+                temp.Button = btn;
+                movesArray.Add(temp);
+            }
 
+            _ = Play_auto_gameAsync(movesArray);
+            Disable_Buttons();
+        }
+
+        /** A method to play an automatic game with a given moves set*/
+        private async Task Play_auto_gameAsync(ArrayList movesArray)
+        {
+            Disable_Buttons();
+            Console.WriteLine("Playing auto game");
+            foreach(Square move in movesArray){
+                await MakeMove(move);
+            }
+        }
+
+        private async Task MakeMove(Square move)
+        {
+            Console.WriteLine("Playing " + move.Shape + " to " + move.Button);
+            Button btn = (Button)this.Controls[move.Button];
+            btn.Text = move.Shape.ToString();
+            int milliseconds = 200;
+            if (move.Shape == 'X')
+            {
+                btn.BackColor = Color.Blue;
+            }
+            else {
+                btn.BackColor = Color.Red;
+            }
+            if (Waiting)
+            {
+                Console.WriteLine("User selected waiting mode");
+                milliseconds = 3000;
+            }
+
+            //sleep between
+            Thread.Sleep(milliseconds);
+            Application.DoEvents();
         }
 
 
@@ -145,7 +214,7 @@ namespace tttGame
             if (turns == 25)
             {
                 Console.WriteLine("Game over!");
-               //TODO: send the game to the server 
+                //TODO: send the game to the server 
             }
 
             bool row_win = Check_row_win(cell_index);
@@ -174,6 +243,7 @@ namespace tttGame
             int i = cell_index[0];
             int j = cell_index[1];
 
+            bool gap = false; // a boolean variable that will become true if there is a gap in the line
 
             // First axis
 
@@ -300,7 +370,7 @@ namespace tttGame
             return win;
         }
 
-        /** A method that will check if there is a diagonal win*/
+        /** A method that will check if there is a row win*/
         private bool Check_row_win(int[] cell_index)
         {
             bool win = false;
@@ -358,11 +428,11 @@ namespace tttGame
                 btn.Text = "X";
                 btn.BackColor = Color.Blue;
                 game.gameMatrix[cell_index[0], cell_index[1]].Shape = 'X';
-                gameData = gameData + "X" + btn.Name+"/"; 
+                gameData = gameData + "X" + btn.Name + "/";
             }
             else
             {
-           
+
                 btn.Text = "O";
                 game.gameMatrix[cell_index[0], cell_index[1]].Shape = 'O';
             }
@@ -412,7 +482,7 @@ namespace tttGame
             }
         }
 
-        
+
 
         /** A method to convert the current board to a json object*/
         private string Convert_matrix_to_json()
@@ -430,7 +500,7 @@ namespace tttGame
             var demoJsonMatrix = JsonConvert.SerializeObject(temp);
             //convert json to object
             Console.WriteLine("Json matrix = " + demoJsonMatrix);
-
+            
             return demoJsonMatrix;
         }
 
@@ -440,38 +510,39 @@ namespace tttGame
         {
             char[,] plain = JsonConvert.DeserializeObject<char[,]>(content);
             Square[,] temp = game.gameMatrix;
-            
+
             for (int i = 0; i < SIZE; i++)
             {
                 for (int j = 0; j < SIZE; j++)
                 {
                     if (!game.gameMatrix[i, j].Shape.Equals(plain[i, j]))
                     {
-                    Console.WriteLine($"the original = {game.gameMatrix[i, j].Shape} , the temp =  {plain[i, j]}");
-                    temp[i, j].Shape = plain[i, j]; // copy the shapes to the game board
-                    if (plain[i, j] != ' ') {
-                        
-                        string btnName = temp[i, j].Button;
-                        int c = Convert.ToInt32(btnName[1].ToString()) + 1;
-                        string finalName = btnName[0] + c.ToString();
-                        Console.WriteLine(finalName);                       
-                        Button btn = (Button) this.Controls[finalName];
-                        btn.Text = plain[i, j].ToString();
-                        btn.Enabled = false;
-                        isMyTurn = true;
+                        Console.WriteLine($"the original = {game.gameMatrix[i, j].Shape} , the temp =  {plain[i, j]}");
+                        temp[i, j].Shape = plain[i, j]; // copy the shapes to the game board
+                        if (plain[i, j] != ' ')
+                        {
+
+                            string btnName = temp[i, j].Button;
+                            int c = Convert.ToInt32(btnName[1].ToString()) + 1;
+                            string finalName = btnName[0] + c.ToString();
+                            Console.WriteLine(finalName);
+                            Button btn = (Button)this.Controls[finalName];
+                            btn.Text = plain[i, j].ToString();
+                            btn.Enabled = false;
+                            isMyTurn = true;
                             btn.BackColor = Color.Red;
                             gameData = gameData + "O" + finalName + "/";
-                        int[] cell_index = Get_cell_index(finalName);
-                    if (Check_win(cell_index))
-                    {
-                      Win_Scenario('O');
-                                
-                    }
+                            int[] cell_index = Get_cell_index(finalName);
+                            if (Check_win(cell_index))
+                            {
+                                Win_Scenario('O');
 
-                                //sleep
-                            int milliseconds = 3000;
-                        Thread.Sleep(milliseconds);
-                       }
+                            }
+
+                            //sleep
+                            int milliseconds = 500;
+                            Thread.Sleep(milliseconds);
+                        }
                     }
                 }
             }
@@ -485,8 +556,6 @@ namespace tttGame
             Console.WriteLine(gameData);
             Disable_Buttons();
 
-            
-
             //TODO : send the game to the server
             //game id 
             //user id 
@@ -495,41 +564,66 @@ namespace tttGame
             //User win yes , no 
             string w = "";
             if (winner.Equals("X"))
-            { w = "Yes"; }
-            else { w = "No"; }
+            { w = "No"; }
+            else { w = "Yes"; }
             Game game = new Game(player.id, turns, DateTime.Now, w);
             sendGameToServer(game);
-
-            sendGameToDb(game);
+            Add_game_to_user();
             Show_win_dialog(winner);
         }
-
-        private void sendGameToDb(Game game)
+        
+        /** A method that will update the number of games for the current user*/
+        private void Add_game_to_user()
         {
-            string query = "INSERT INTO TblGames (Participant, Num_of_turns, Date, User_win, Data_game) " +
-                            "VALUES(" + game.participant + "," + game.num_of_turns + "," + game.date + "," + game.user_win + "," + gameData + ")";
+            Console.WriteLine("Adding game to: "+player.id);
+            string tempPath = "api/TblPlayers/addgame/"+player.id;
+
+            var response = client.GetAsync(tempPath).Result;
+
+            if (response.IsSuccessStatusCode)
+            {
+                Console.WriteLine("SUCCESS: "+response.ReasonPhrase);
+            }
+            else
+            {
+                Console.WriteLine("ERROR: " + response.ReasonPhrase);
+            }
+        }
+
+        private void Save_game_to_local_db(int id)
+        {
+            Console.WriteLine("Saving game to local db");
+
+            string query = "INSERT INTO TblGames (Id, Turns) " +
+                "VALUES('" + id + "','" + gameData + "')";
             putData(query);
         }
 
         private async void sendGameToServer(Game game)
         {
-            var JsonCredential = JsonConvert.SerializeObject(game);
-            //convert json to object
-            Console.WriteLine("Json matrix = " + JsonCredential);
-
             string gamePATH = "api/TblGames";
-            var response = client.PostAsJsonAsync(gamePATH, JsonCredential).Result;
+            var response = client.PostAsJsonAsync(gamePATH, game).Result;
 
             if (response.IsSuccessStatusCode)
             {
                 // receive the board with the play
                 var responseString = await response.Content.ReadAsStringAsync();
                 Console.WriteLine("Success: " + responseString);
-                MessageBox.Show("Post on server: " + response.ReasonPhrase);
+
+                dynamic stuff = JObject.Parse(responseString);
+
+                int id = stuff["id"];
+
+                Console.WriteLine("Got game id from server " + id);
+
+                Save_game_to_local_db(id);
+                /*                MessageBox.Show("Post on server: " + response.ReasonPhrase);
+                */
             }
             else
             {
-                MessageBox.Show("Error: " + response.ReasonPhrase);
+                /*                MessageBox.Show("Error: " + response.ReasonPhrase);
+                */
                 Console.WriteLine("Error: " + response.ReasonPhrase);
             }
         }
@@ -554,7 +648,13 @@ namespace tttGame
             Win_Dialog dialog = new Win_Dialog(winner.ToString(), turns);
             if (dialog.ShowDialog() == DialogResult.OK)
             {
+                Console.WriteLine("result ok");
                 Reset_Game();
+            }
+            else {
+                Console.WriteLine("Result not ok");
+                this.DialogResult = DialogResult.OK;
+                this.Close();
             }
         }
 
@@ -579,6 +679,7 @@ namespace tttGame
                 {
                     b.Enabled = true;
                     b.Text = "";
+                    b.BackColor = SystemColors.ButtonFace;
                 }
             }
         }
@@ -594,11 +695,11 @@ namespace tttGame
                 {
                     if (reader.HasRows)
                     {
-                        
+
                     }
                     else
                     {
-                        
+
                     }
                 }
                 connection.Close();
@@ -607,25 +708,29 @@ namespace tttGame
 
         private void putData(string queryString)
         {
+            Console.WriteLine("Putting data: " + queryString);
             using (SqlConnection connection = new SqlConnection(connectionString))
             {
                 SqlCommand command = new SqlCommand(
                     queryString, connection);
-                
+
                 try
                 {
                     connection.Open();
-
-                    MessageBox.Show("Post on Local DB");
+                    Console.WriteLine("Connection is open");
+                    command.ExecuteNonQuery();
+                    connection.Close();
+                    //MessageBox.Show("Post on Local DB");
                 }
-                catch (SqlException)
+                catch (SqlException e)
                 {
-                    MessageBox.Show("Error Post on Local DB: ");
+                    Console.WriteLine("Error writing to local db: " + e.Message);
+                    //MessageBox.Show("Error Post on Local DB: ");
                 }
                 connection.Close();
             }
-                
-            }
+
         }
     }
+}
 

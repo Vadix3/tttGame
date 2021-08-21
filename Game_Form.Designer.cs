@@ -306,7 +306,7 @@ namespace tttGame
             this.e1.UseVisualStyleBackColor = true;
             this.e1.Click += new System.EventHandler(this.Button_click);
             // 
-            // Form1
+            // Game_Form
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 25F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -337,10 +337,11 @@ namespace tttGame
             this.Controls.Add(this.a2);
             this.Controls.Add(this.a1);
             this.MaximizeBox = false;
-            this.Name = "Form1";
+            this.Name = "Game_Form";
             this.ShowIcon = false;
             this.Text = "Tic Tac Toe";
             this.Load += new System.EventHandler(this.Game_Form_Load);
+            this.Shown += new System.EventHandler(this.Game_Form_Shown);
             this.ResumeLayout(false);
 
         }

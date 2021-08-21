@@ -53,11 +53,12 @@ namespace tttGame
             this.btnAgain.TabIndex = 1;
             this.btnAgain.Text = "Play again";
             this.btnAgain.UseVisualStyleBackColor = true;
+            this.btnAgain.Visible = false;
             this.btnAgain.Click += new System.EventHandler(this.btnAgain_Click);
             // 
             // btnQuit
             // 
-            this.btnQuit.Location = new System.Drawing.Point(322, 189);
+            this.btnQuit.Location = new System.Drawing.Point(177, 189);
             this.btnQuit.Name = "btnQuit";
             this.btnQuit.Size = new System.Drawing.Size(170, 80);
             this.btnQuit.TabIndex = 2;

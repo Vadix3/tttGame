@@ -42,9 +42,9 @@ namespace tttGame
             this.label1.AutoSize = true;
             this.label1.Font = new System.Drawing.Font("MS UI Gothic", 20.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
             this.label1.ForeColor = System.Drawing.SystemColors.MenuHighlight;
-            this.label1.Location = new System.Drawing.Point(28, 68);
+            this.label1.Location = new System.Drawing.Point(97, 49);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(148, 27);
+            this.label1.Size = new System.Drawing.Size(218, 41);
             this.label1.TabIndex = 0;
             this.label1.Text = "Tic tac toe";
             // 
@@ -52,18 +52,18 @@ namespace tttGame
             // 
             this.userBox.BackColor = System.Drawing.Color.White;
             this.userBox.Font = new System.Drawing.Font("MS UI Gothic", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.userBox.Location = new System.Drawing.Point(42, 140);
+            this.userBox.Location = new System.Drawing.Point(73, 159);
             this.userBox.Name = "userBox";
-            this.userBox.Size = new System.Drawing.Size(216, 28);
+            this.userBox.Size = new System.Drawing.Size(258, 39);
             this.userBox.TabIndex = 1;
             // 
             // label2
             // 
             this.label2.AutoSize = true;
             this.label2.ForeColor = System.Drawing.Color.Silver;
-            this.label2.Location = new System.Drawing.Point(33, 120);
+            this.label2.Location = new System.Drawing.Point(140, 128);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(75, 17);
+            this.label2.Size = new System.Drawing.Size(116, 28);
             this.label2.TabIndex = 2;
             this.label2.Text = "User Name";
             // 
@@ -71,9 +71,9 @@ namespace tttGame
             // 
             this.label3.AutoSize = true;
             this.label3.ForeColor = System.Drawing.Color.Silver;
-            this.label3.Location = new System.Drawing.Point(33, 185);
+            this.label3.Location = new System.Drawing.Point(152, 239);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(66, 17);
+            this.label3.Size = new System.Drawing.Size(100, 28);
             this.label3.TabIndex = 3;
             this.label3.Text = "Password";
             // 
@@ -81,18 +81,19 @@ namespace tttGame
             // 
             this.passwordBox.BackColor = System.Drawing.Color.White;
             this.passwordBox.Font = new System.Drawing.Font("MS UI Gothic", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.passwordBox.Location = new System.Drawing.Point(42, 205);
+            this.passwordBox.Location = new System.Drawing.Point(73, 270);
             this.passwordBox.Name = "passwordBox";
-            this.passwordBox.Size = new System.Drawing.Size(216, 28);
+            this.passwordBox.Size = new System.Drawing.Size(258, 39);
             this.passwordBox.TabIndex = 4;
+            this.passwordBox.UseSystemPasswordChar = true;
             // 
             // loginBtn
             // 
             this.loginBtn.BackColor = System.Drawing.Color.White;
             this.loginBtn.ForeColor = System.Drawing.Color.Blue;
-            this.loginBtn.Location = new System.Drawing.Point(40, 280);
+            this.loginBtn.Location = new System.Drawing.Point(73, 376);
             this.loginBtn.Name = "loginBtn";
-            this.loginBtn.Size = new System.Drawing.Size(216, 35);
+            this.loginBtn.Size = new System.Drawing.Size(258, 73);
             this.loginBtn.TabIndex = 5;
             this.loginBtn.Text = "Login";
             this.loginBtn.UseVisualStyleBackColor = false;
@@ -100,10 +101,10 @@ namespace tttGame
             // 
             // Login_Form
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 17F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 28F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.ControlLightLight;
-            this.ClientSize = new System.Drawing.Size(302, 379);
+            this.ClientSize = new System.Drawing.Size(404, 484);
             this.Controls.Add(this.loginBtn);
             this.Controls.Add(this.passwordBox);
             this.Controls.Add(this.label3);
@@ -113,7 +114,6 @@ namespace tttGame
             this.Font = new System.Drawing.Font("Nirmala UI", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
             this.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(230)))), ((int)(((byte)(231)))), ((int)(((byte)(233)))));
             this.Name = "Login_Form";
-            this.Text = "Login_Form";
             this.Load += new System.EventHandler(this.Login_Form_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
